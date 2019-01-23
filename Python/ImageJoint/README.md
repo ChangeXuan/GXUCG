@@ -4,4 +4,6 @@
 ```
 # 命令行下使用方法
 $ python ImageJoint.py Images
+
+该脚本的python版本为3.6，opencv为4
 ```
