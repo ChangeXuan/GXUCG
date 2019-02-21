@@ -28,7 +28,7 @@ def image_loader(image_name):
 	return image.to(device, torch.float)
 # 读取图片
 style_img = image_loader("./data/images/neural-style/picasso.jpg")
-content_img = image_loader("./data/images/neural-style/dancing.jpg")
+content_img = image_loader("./data/images/neural-style/test3.jpg")
 # 断言判断图片尺寸是否相等
 assert style_img.size() == content_img.size(), \
 	"we need to import style and content images of the same size"
@@ -83,7 +83,9 @@ class StyleLoss(nn.Module):
 		self.target = gram_matrix(target_feature).detach()
 	def forward(self, input):
 		G = gram_matrix(input)
+		# 即G需要计算梯度，self.target不需要
 		self.loss = F.mse_loss(G, self.target)
+		# 相当于修改input(暂时这么认为)
 		return input
 
 # -------取得vgg19预训练模型的features,并设置为评估模式
@@ -103,7 +105,7 @@ class Normalization(nn.Module):
 		return (img - self.mean)/self.std
 
 # -------创建新的顺序模型，包好内容loss和样式loss
-content_layers_default = ['conv4']
+content_layers_default = ['conv_4']
 style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
 
 def get_style_model_and_loss(cnn, normalization_mean, normalization_std,
@@ -117,6 +119,7 @@ def get_style_model_and_loss(cnn, normalization_mean, normalization_std,
 	# model第一层为标准化输入
 	model = nn.Sequential(normalization)
 	i = 0
+	# 遍历vgg19模型
 	for layer in cnn.children():
 		# 判断该层是否是Conv2d
 		if isinstance(layer, nn.Conv2d):
@@ -146,7 +149,7 @@ def get_style_model_and_loss(cnn, normalization_mean, normalization_std,
 			style_loss = StyleLoss(target_feature)
 			model.add_module("style_loss_{}".format(i), style_loss)
 			style_losses.append(style_loss)
-	# 修建图层直到最后一层为内容loss或样式loss
+	# 修剪图层直到最后一层为内容loss或样式loss
 	# 从图的后往前遍历
 	for i in range(len(model) - 1, -1, -1):
 		if isinstance(model[i], ContentLoss) or isinstance(model[i], StyleLoss):
@@ -176,9 +179,12 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 	# 取得模型和内容，风格loss
 	model, style_losses, content_losses = get_style_model_and_loss(cnn,
 		normalization_mean, normalization_std, style_img, content_img)
+	# 输出模型
+	print(model)
+	model.to(device)
 	# 取得优化器
 	optimizer = get_input_optimizer(input_img)
-	print('Optimizing..')
+	print('Optimizing...')
 	run = [0]
 	while run[0] <= num_steps:
 		def closure():
@@ -187,6 +193,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 			# 把图像输入模型
 			# 此时，在model中的所有模型的forward函数会被依次调用
 			model(input_img)
+
 			style_score = 0
 			content_score = 0
 			for sl in style_losses:
@@ -206,7 +213,7 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 					style_score, content_score))
 				print()
 			return style_score + content_score
-
+		# LBFGS优化器的step必须要有个返回loss的闭包作为参数
 		optimizer.step(closure)
 	input_img.data.clamp_(0, 1)
 	return input_img
@@ -214,7 +221,6 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
 # -------运行
 output = run_style_transfer(cnn, cnn_normalization_mean, cnn_normalization_std,
 	content_img, style_img, input_img)
-
 plt.figure()
 imshow(output, title='Output Image')
 
