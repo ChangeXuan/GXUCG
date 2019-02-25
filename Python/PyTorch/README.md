@@ -17,3 +17,18 @@ $ python
 1.0.1
 >> torch.cuda.is_availiable()
 ```
+
+## 安装pydensecrf
+```
+可以使用pip install pydensecrf, 但是只限于python3.5.
+因为我使用的时Anaconda3自带的python3.7.1故可以使用conda install pydensecrf,
+但是直接使用conda install pydensecrf会出现找不到包的错误出现.
+按照Anaconda官网的提示，可以使用conda install -c conda-forge pydensecrf,
+但是直接使用这条命令会更新整个Anaconda，并且会使python的版本降为3.6.7，
+而且之前下载的Pytorch等也会被移除。
+故推荐的下载顺序如下
+```
+- 安装Anaconda3
+- conda install -c conda-forge pydensecrf(如果一直卡在solv，可以试试conda update --all)
+- conda install pytorch torchvision cudatoolkit=9.0 -c pytorch(如果教慢可以添加[清华的源](https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/))
+
