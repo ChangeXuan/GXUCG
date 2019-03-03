@@ -38,6 +38,7 @@ def view_key(flag):
 # 保存视图
 def save_view():
 	# 鼠标定位
+	# 不同的电脑需要自己定位
 	mc.position = (177, 104)
 	# 左键单击
 	mc.click(mouse.Button.left,1)
